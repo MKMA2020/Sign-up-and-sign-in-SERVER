@@ -5,10 +5,15 @@
  */
 package mkma.signupsignin.dataaccess;
 
+import signable.Signable;
+
 /**
- *
- * @author 2dam
+ * This class will generate a SignableImplementation object.
+ * @author Martin Gros and Martin Valiente
  */
 public class SignableFactory {
-    
+
+    public Signable SignableFactory() {
+        return (new SignableImplementation());
+    }
 }
