@@ -17,25 +17,25 @@ import user_message.User;
 /**
  *
  * @author Martin Valiente Ainz
- * 
+ *
  */
 public class SignableImplementationTest {
-    
+
     public SignableImplementationTest() {
     }
-    
+
     @BeforeClass
     public static void setUpClass() {
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
-    
+
     @Before
     public void setUp() {
     }
-    
+
     @After
     public void tearDown() {
     }
@@ -49,14 +49,15 @@ public class SignableImplementationTest {
         Message message = new Message();
         User user = new User();
         // Login to test
-        String login = "";
+        String login = "asd";
         // Password to test
-        String password = "";
-        user.setLogin(login);        
+        String password = "asd1";
+        user.setLogin(login);
         user.setPassword(password);
         message.setUser(user);
         SignableImplementation instance = new SignableImplementation();
         instance.signIn(message);
+        assertEquals(message.getMessageType(),"OKAY");
     }
 
     /**
@@ -68,16 +69,15 @@ public class SignableImplementationTest {
         Message message = new Message();
         User user = new User();
         // Set user data
-        user.setId(0);
-        user.setLogin("");
-        user.setEmail("");
-        user.setFullName("");
-        user.setPassword("");
-    
+        user.setId(2);
+        user.setLogin("tinitiuset");
+        user.setEmail("tinitiuset@gmail.com");
+        user.setFullName("Martin Valiente");
+        user.setPassword("Galleta123!");
+        message.setUser(user);
+
         SignableImplementation instance = new SignableImplementation();
         instance.signUp(message);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
     }
 
     /**
@@ -92,5 +92,5 @@ public class SignableImplementationTest {
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
     }
-    
+
 }
