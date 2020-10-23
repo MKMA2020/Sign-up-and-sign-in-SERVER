@@ -36,7 +36,7 @@ public class DaoConnection {
     public DaoConnection() {
 
         // We will use the file config (control package) for the connection
-        this.configFile = ResourceBundle.getBundle("control.config");
+        this.configFile = ResourceBundle.getBundle("mkma.signupsignin.dataaccess.config");
         this.driverBD = this.configFile.getString("Driver");
         this.urlDB = this.configFile.getString("Conn");
         this.userBD = this.configFile.getString("DBUser");

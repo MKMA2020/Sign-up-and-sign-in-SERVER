@@ -13,7 +13,7 @@ import signable.Signable;
  */
 public class SignableFactory {
 
-    public Signable SignableFactory() {
+    public Signable getSignable() {
         return (new SignableImplementation());
     }
 }
