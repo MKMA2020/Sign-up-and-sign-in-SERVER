@@ -42,19 +42,21 @@ public class SignableImplementation implements Signable {
      * match the user and the user exists.
      */
     @Override
-    public void signIn(Message message) throws UserNotFoundException {
+    public void signIn(Message message) {
+        // AQUI DEBERIA HABER UN THROWS USERNOTFOUNDEXCEPTION
 
-        // User and password declared and asigned values from recieved user for the select
-        String username = message.getUser().getLogin();
-        String password = message.getUser().getPassword();
-        // Last Acces of the User will be updated.
-        Timestamp lastAccess = Timestamp.from(Instant.now());
-        boolean logInSuccess = false;
-
-        // Initialize objects and variables
-        DaoConnection dao = new DaoConnection();
-        ResultSet rs = null;
         try {
+            // User and password declared and asigned values from recieved user for the select
+            String username = message.getUser().getLogin();
+            String password = message.getUser().getPassword();
+
+            // Last Acces of the User will be updated.
+            Timestamp lastAccess = Timestamp.from(Instant.now());
+
+            // Initialize objects and variables
+            DaoConnection dao = new DaoConnection();
+            ResultSet rs = null;
+
             // Start the connection.
             dao.conectar();
 
@@ -62,57 +64,42 @@ public class SignableImplementation implements Signable {
             PreparedStatement stmtUser = dao.con.prepareStatement(checkUsername);
             PreparedStatement stmtPass = dao.con.prepareStatement(checkPassword);
 
-            // Set the Strings username and password to the final queries.
+            // Set the Strings usernames and password to the final queries.
             stmtUser.setString(1, username);
             stmtPass.setString(1, username);
             stmtPass.setString(2, password);
 
-            try {
-                rs = stmtUser.executeQuery();
-                if (!rs.next()) {
-                    throw new UserNotFoundException();
-                }
-                rs = stmtPass.executeQuery();
-                if (!rs.next()) {
-                    throw new PasswordNotCorrectException();
-                }
-
-                message.setMessageType(Message.MessageType.OKAY.toString());
-                logInSuccess = true;
-
-                dao.con.prepareStatement(updateLastAccess);
-            } catch (SQLException ex) {
-                Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
-                // FALLO AL ACTUALIZAR LA FECHA
+            // Execute the User check query into rs Resultset and throw UserNotFoundException
+            // if there is not a Username match
+            rs = stmtUser.executeQuery();
+            if (!rs.next()) {
+                throw new UserNotFoundException();
             }
-        }
-    }
-    catch (PassNotCorrectException PassNotCorrect
 
-    
-        ) {
-                        Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, PassNotCorrect);
-        //USUARIO SI EXISTE PERO LA CONTRASEÑA ES INCORRECTA
-        message.setMessageType(Message.MessageType.PassNotCorrect.toString());
-    }
+            // Execute the Password check query into rs ResultSet and throw PassNotCorrectException
+            // if there is not a match
+            rs = stmtPass.executeQuery();
+            if (!rs.next()) {
+                throw new PassNotCorrectException();
+            }
 
-}
-
-
-} catch (UserNotFoundException UserNotFound) {
-                Logger.getLogger(SignableImplementation.class
-.getName()).log(Level.SEVERE, null, UserNotFound);
-                // EL NOMBRE DE USUARIO NO EXISTE O ES INCORRECTO
-                message.setMessageType(Message.MessageType.UserNotFound.toString());
+            // UNCOMMENT THE NEXT LINE
+            //message.setMessageType(Message.MessageType.OKAY.toString());
+            
+            // Update Last Access Query Code
+            {
+                // Create Statement
+                PreparedStatement stmtLastAccess = dao.con.prepareStatement(updateLastAccess);
+                // Set the lastAccess Timestamp into the final Query
+                stmtLastAccess.setTimestamp(1, lastAccess);
+                // Execute the Query
+                stmtLastAccess.executeQuery();
             }
             dao.desconectar();
-
-        
-
-} catch (Exception ex) {
-            Logger.getLogger(SignableImplementation.class
-.getName()).log(Level.SEVERE, null, ex);
-            // FALLA LA CONEXION
+        } catch (SQLException ex) {
+            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -125,7 +112,7 @@ public class SignableImplementation implements Signable {
      * @param user an User will be recieved.
      */
     @Override
-        public void signUp(Message message) {
+    public void signUp(Message message) {
         // User and password declared and asigned values from recieved user for the select
         long id = message.getUser().getId();
         String login = message.getUser().getLogin();
@@ -160,26 +147,24 @@ public class SignableImplementation implements Signable {
             try {
                 // Execute the query and insert the user.
                 stmt.executeUpdate();
-            
 
-} catch (SQLException ex) {
+            } catch (SQLException ex) {
                 Logger.getLogger(SignableImplementation.class
-.getName()).log(Level.SEVERE, null, ex);
+                        .getName()).log(Level.SEVERE, null, ex);
                 //Unable to add the new user.
             }
             dao.desconectar();
-        
 
-} catch (Exception ex) {
+        } catch (Exception ex) {
             Logger.getLogger(SignableImplementation.class
-.getName()).log(Level.SEVERE, null, ex);
+                    .getName()).log(Level.SEVERE, null, ex);
             //Connection error
         }
 
     }
 
     @Override
-        public void signOut(Message message) {
+    public void signOut(Message message) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }
