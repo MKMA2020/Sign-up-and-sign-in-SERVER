@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import signable.Signable;
-import user_message.Message;
+import user_message.User;
 
 /**
  * This will be the server side SignableImplementation or Data Acces Object
@@ -42,13 +42,13 @@ public class SignableImplementation implements Signable {
      * match the user and the user exists.
      */
     @Override
-    public void signIn(Message message) {
+    public User signIn(User user) {
         // AQUI DEBERIA HABER UN THROWS USERNOTFOUNDEXCEPTION
 
         try {
             // User and password declared and asigned values from recieved user for the select
-            String username = message.getUser().getLogin();
-            String password = message.getUser().getPassword();
+            String username = user.getLogin();
+            String password = user.getPassword();
 
             // Last Acces of the User will be updated.
             Timestamp lastAccess = Timestamp.from(Instant.now());
@@ -101,7 +101,7 @@ public class SignableImplementation implements Signable {
         } catch (Exception ex) {
             Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        return user;
     }
 
     /**
@@ -112,13 +112,13 @@ public class SignableImplementation implements Signable {
      * @param user an User will be recieved.
      */
     @Override
-    public void signUp(Message message) {
+    public User signUp(User user) {
         // User and password declared and asigned values from recieved user for the select
-        long id = message.getUser().getId();
-        String login = message.getUser().getLogin();
-        String email = message.getUser().getEmail();
-        String fullName = message.getUser().getFullName();
-        String password = message.getUser().getPassword();
+        long id = user.getId();
+        String login = user.getLogin();
+        String email = user.getEmail();
+        String fullName = user.getFullName();
+        String password = user.getPassword();
         Boolean isAdmin = false;
         Boolean isActive = true;
         Timestamp lastAccess = Timestamp.from(Instant.now());
@@ -160,11 +160,11 @@ public class SignableImplementation implements Signable {
                     .getName()).log(Level.SEVERE, null, ex);
             //Connection error
         }
-
+        return user;
     }
 
     @Override
-    public void signOut(Message message) {
+    public User signOut(User user) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }
