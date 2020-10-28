@@ -9,6 +9,10 @@ package mkma.signupsignin.thread;
  *
  * @author 2dam
  */
-public class Worker {
-    
+public class Worker extends Thread {
+
+    @Override
+    public void run() {
+        
+    }
 }
