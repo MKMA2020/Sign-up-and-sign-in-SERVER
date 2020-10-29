@@ -37,9 +37,7 @@ public class Worker extends Thread {
     public void run() {
 
         ObjectInputStream entry = null;
-        InputStream input = null;
-        Message signin = new Message();
-        signin.setMessageType(1);
+        InputStream input = null;       
 
         //Opening of the entry stream
         try {
@@ -52,14 +50,17 @@ public class Worker extends Thread {
         //Message received and treated
         try {
             Message received = (Message) entry.readObject();
-            System.out.println(received.getUser().getLogin());
-            System.out.println(received.getUser().getEmail());
             SignableFactory factory = new SignableFactory();
             Signable signable = factory.getSignable();
-            if (received.getMessageType() == signin.getMessageType()) 
-                signable.signIn(received.getUser());
-            else 
-                 signable.signUp(received.getUser());
+            
+            switch (received.getMessageType()) {
+                case SIGNIN:   
+                    signable.signIn(received.getUser());
+                    break;
+                case SIGNUP:
+                    signable.signUp(received.getUser());
+                    break;                       
+            }
        
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);

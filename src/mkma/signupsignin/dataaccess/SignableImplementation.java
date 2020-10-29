@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import signable.Signable;
@@ -28,7 +29,7 @@ public class SignableImplementation implements Signable {
 
     private final String checkUsername = "SELECT login from user where login = ?;";
     private final String checkPassword = "SELECT password from user where login = ? and password = ?;";
-    private final String updateLastAccess = "UPDATE user set lastAccess=? where login is ?";
+    private final String updateLastAccess = "UPDATE user set lastAcces=? where login = ?";
     private final String insertUser = "INSERT into user values (?,?,?,?,?,?,?,?,?)";
 
     /**
@@ -50,7 +51,7 @@ public class SignableImplementation implements Signable {
             String username = user.getLogin();
             String password = user.getPassword();
 
-            // Last Acces of the User will be updated.
+            // Last Access of the User will be updated.
             Timestamp lastAccess = Timestamp.from(Instant.now());
 
             // Initialize objects and variables
@@ -92,8 +93,9 @@ public class SignableImplementation implements Signable {
                 PreparedStatement stmtLastAccess = dao.con.prepareStatement(updateLastAccess);
                 // Set the lastAccess Timestamp into the final Query
                 stmtLastAccess.setTimestamp(1, lastAccess);
+                stmtLastAccess.setString(2, username);
                 // Execute the Query
-                stmtLastAccess.executeQuery();
+                stmtLastAccess.executeUpdate();
             }
             dao.desconectar();
         } catch (SQLException ex) {
@@ -128,6 +130,7 @@ public class SignableImplementation implements Signable {
         DaoConnection dao = new DaoConnection();
         ResultSet rs = null;
         PreparedStatement stmt = null;
+        
         try {
             // Start the connection.
             dao.conectar();
