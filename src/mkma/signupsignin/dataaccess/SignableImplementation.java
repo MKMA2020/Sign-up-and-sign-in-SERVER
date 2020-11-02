@@ -31,6 +31,7 @@ public class SignableImplementation implements Signable {
     private final String checkPassword = "SELECT password from user where login = ? and password = ?;";
     private final String updateLastAccess = "UPDATE user set lastAcces=? where login = ?";
     private final String insertUser = "INSERT into user values (?,?,?,?,?,?,?,?,?)";
+    private final String lastId = "SELECT count(id) from user;";
 
     /**
      * signIn Method mostly done. Exceptions yet to handle. Method will check if
@@ -74,7 +75,7 @@ public class SignableImplementation implements Signable {
             // if there is not a Username match
             rs = stmtUser.executeQuery();
             if (!rs.next()) {
-                throw new UserNotFoundException();
+                throw new UserNotFoundException();               
             }
 
             // Execute the Password check query into rs ResultSet and throw PassNotCorrectException
@@ -103,6 +104,7 @@ public class SignableImplementation implements Signable {
         } catch (Exception ex) {
             Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
         return user;
     }
 
@@ -116,7 +118,7 @@ public class SignableImplementation implements Signable {
     @Override
     public User signUp(User user) {
         // User and password declared and asigned values from recieved user for the select
-        long id = user.getId();
+        
         String login = user.getLogin();
         String email = user.getEmail();
         String fullName = user.getFullName();
@@ -130,6 +132,7 @@ public class SignableImplementation implements Signable {
         DaoConnection dao = new DaoConnection();
         ResultSet rs = null;
         PreparedStatement stmt = null;
+        long nId=findLastId();
         
         try {
             // Start the connection.
@@ -137,7 +140,7 @@ public class SignableImplementation implements Signable {
 
             // Set the Strings username and password to the final query.
             stmt = dao.con.prepareStatement(insertUser);
-            stmt.setLong(1, id);
+            stmt.setLong(1, nId);
             stmt.setString(2, login);
             stmt.setString(3, email);
             stmt.setString(4, fullName);
@@ -169,5 +172,30 @@ public class SignableImplementation implements Signable {
     @Override
     public User signOut(User user) {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private long findLastId() {
+        int id=0;
+         try {
+         // Initialize objects and variables
+        DaoConnection dao = new DaoConnection();
+        ResultSet rs = null;
+        //starts the connection and gets de id.
+        dao.conectar();
+        PreparedStatement stmt = dao.con.prepareStatement(lastId);
+
+        rs=stmt.executeQuery();
+        if(rs.next())
+            id=rs.getInt(1)+1;       
+        //Ends the connection
+        dao.desconectar();
+      
+        
+         } catch (SQLException ex) {
+            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+        }
+         return id;
     }
 }

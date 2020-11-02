@@ -14,12 +14,16 @@ import exceptions.UserNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import mkma.signupsignin.dataaccess.SignableFactory;
 import signable.Signable;
 import user_message.Message;
+import user_message.MessageType;
+import user_message.User;
 
 /**
  *
@@ -28,6 +32,9 @@ import user_message.Message;
 public class Worker extends Thread {
 
     private Socket service;
+    private Message returnMessage;
+    private User user;
+    private Message received;
 
     public Worker(Socket service) {
         this.service = service;
@@ -37,7 +44,7 @@ public class Worker extends Thread {
     public void run() {
 
         ObjectInputStream entry = null;
-        InputStream input = null;       
+        InputStream input = null;
 
         //Opening of the entry stream
         try {
@@ -49,35 +56,39 @@ public class Worker extends Thread {
 
         //Message received and treated
         try {
-            Message received = (Message) entry.readObject();
+            received = (Message) entry.readObject();
             SignableFactory factory = new SignableFactory();
             Signable signable = factory.getSignable();
-            
+
             switch (received.getMessageType()) {
-                case SIGNIN:   
-                    signable.signIn(received.getUser());
+                case SIGNIN:
+                    user = signable.signIn(received.getUser());
+                    returnMessage = new Message(user, MessageType.OKAY);
                     break;
                 case SIGNUP:
-                    signable.signUp(received.getUser());
-                    break;                       
+                    user = signable.signUp(received.getUser());
+                    returnMessage = new Message(user, MessageType.OKAY);
+                    break;
             }
-       
+
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
             //Closes the streams and the socket
         } catch (DataBaseConnectionException ex) {
-            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+            returnMessage.setMessageType(MessageType.DATABASEERROR);
         } catch (PassNotCorrectException ex) {
-            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+            returnMessage.setMessageType(MessageType.PASSNOTCORRECT);
         } catch (ServerErrorException ex) {
-            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+            returnMessage.setMessageType(MessageType.SERVERERROR);
         } catch (TimeOutException ex) {
-            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+            returnMessage.setMessageType(MessageType.TIMEOUTEXCEPTION);
         } catch (UserNotFoundException ex) {
-            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+            returnMessage.setMessageType(MessageType.USERNOTFOUND);
         } catch (UserExistsException ex) {
-            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+            returnMessage.setMessageType(MessageType.USEREXISTS);
+            
         } finally {
+            returnMessage(returnMessage, service);
             try {
                 entry.close();
             } catch (IOException ex) {
@@ -90,6 +101,32 @@ public class Worker extends Thread {
             }
             try {
                 service.close();
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+    }
+
+    public void returnMessage(Message message, Socket socket) {
+        OutputStream outputStream = null;
+        ObjectOutputStream objectOutputStream = null;
+
+        //Defines the object and the stream, and sends a message
+        try {          
+            outputStream = socket.getOutputStream();
+            objectOutputStream = new ObjectOutputStream(outputStream);
+            objectOutputStream.writeObject(message);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            //Closes the socket and the stream
+        } finally {
+            try {
+                objectOutputStream.close();
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+            try {
+                outputStream.close();
             } catch (IOException ex) {
                 System.out.println(ex.getMessage());
             }

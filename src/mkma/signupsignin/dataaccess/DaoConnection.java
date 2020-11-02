@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -16,7 +18,7 @@ import java.util.ResourceBundle;
  * This will be the temporary Dao Connection Class until the pool is implemented.
  * @author Martin Gros and Martin Valiente
  */
-public class DaoConnection {
+public class DaoConnection  {
     // Attributes
 
     Connection con = null;
@@ -29,6 +31,9 @@ public class DaoConnection {
     private String urlDB;
     private String userBD;
     private String passwordDB;
+    private ConnectionPool connectionpool;
+    
+    
 
     /**
      * Gets the configuration from the control package.
@@ -41,6 +46,7 @@ public class DaoConnection {
         this.urlDB = this.configFile.getString("Conn");
         this.userBD = this.configFile.getString("DBUser");
         this.passwordDB = this.configFile.getString("DBPass");
+        
     }
 
     /**
@@ -52,7 +58,8 @@ public class DaoConnection {
     protected void conectar() throws Exception {
         try {
             Class.forName(this.driverBD);
-            con = DriverManager.getConnection(this.urlDB, this.userBD, this.passwordDB);
+            
+            con = DriverManager.getConnection(this.urlDB, this.userBD, this.passwordDB);;
             stmt = con.createStatement();
         } catch (SQLException e) {
             throw new Exception("Error de SQL al conectar " + e.getMessage());
