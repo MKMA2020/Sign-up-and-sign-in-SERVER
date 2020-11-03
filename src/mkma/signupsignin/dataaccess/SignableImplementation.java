@@ -5,14 +5,15 @@
  */
 package mkma.signupsignin.dataaccess;
 
+import exceptions.DataBaseConnectionException;
 import exceptions.PassNotCorrectException;
+import exceptions.ServerErrorException;
 import exceptions.UserNotFoundException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import signable.Signable;
@@ -44,8 +45,7 @@ public class SignableImplementation implements Signable {
      * match the user and the user exists.
      */
     @Override
-    public User signIn(User user) {
-        // AQUI DEBERIA HABER UN THROWS USERNOTFOUNDEXCEPTION
+    public User signIn(User user) throws DataBaseConnectionException, ServerErrorException, UserNotFoundException, PassNotCorrectException {
 
         try {
             // User and password declared and asigned values from recieved user for the select
@@ -59,8 +59,12 @@ public class SignableImplementation implements Signable {
             DaoConnection dao = new DaoConnection();
             ResultSet rs = null;
 
-            // Start the connection.
-            dao.conectar();
+            try {
+                // Start the connection.
+                dao.conectar();
+            } catch (Exception ex) {
+                Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
             // Create Statements
             PreparedStatement stmtUser = dao.con.prepareStatement(checkUsername);
@@ -85,8 +89,6 @@ public class SignableImplementation implements Signable {
                 throw new PassNotCorrectException();
             }
 
-            // UNCOMMENT THE NEXT LINE
-            //message.setMessageType(Message.MessageType.OKAY.toString());
             
             // Update Last Access Query Code
             {
@@ -95,15 +97,18 @@ public class SignableImplementation implements Signable {
                 // Set the lastAccess Timestamp into the final Query
                 stmtLastAccess.setTimestamp(1, lastAccess);
                 stmtLastAccess.setString(2, username);
-                // Execute the Query
+                // Execute the Query              
                 stmtLastAccess.executeUpdate();
             }
-            dao.desconectar();
-        } catch (SQLException ex) {
-            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Exception ex) {
-            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            try {
+                dao.desconectar();
+            } catch (Exception ex) {
+                Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } catch (SQLException ex ) {
+            throw new DataBaseConnectionException();
         }
+       
         
         return user;
     }

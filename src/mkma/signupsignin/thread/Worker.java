@@ -45,6 +45,7 @@ public class Worker extends Thread {
 
         ObjectInputStream entry = null;
         InputStream input = null;
+        returnMessage = new Message(null, null);
 
         //Opening of the entry stream
         try {
@@ -63,11 +64,13 @@ public class Worker extends Thread {
             switch (received.getMessageType()) {
                 case SIGNIN:
                     user = signable.signIn(received.getUser());
-                    returnMessage = new Message(user, MessageType.OKAY);
+                    returnMessage.setUser(user);
+                    returnMessage.setMessageType(MessageType.OKAY);
                     break;
                 case SIGNUP:
                     user = signable.signUp(received.getUser());
-                    returnMessage = new Message(user, MessageType.OKAY);
+                    returnMessage.setUser(user);
+                    returnMessage.setMessageType(MessageType.OKAY);
                     break;
             }
 
@@ -88,6 +91,8 @@ public class Worker extends Thread {
             returnMessage.setMessageType(MessageType.USEREXISTS);
             
         } finally {
+            if (returnMessage.getMessageType() != MessageType.OKAY)
+                returnMessage.setUser(null);
             returnMessage(returnMessage, service);
             try {
                 entry.close();
