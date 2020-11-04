@@ -31,7 +31,7 @@ public class ConnectionPool {
         ds.setMaxOpenPreparedStatements(Integer.parseInt(configFile.getString("MaxOpenStatements")));
     }
 
-    public static Connection getConnection() throws SQLException {
+    public static synchronized Connection getConnection() throws SQLException {
         return ds.getConnection();
     }
 }

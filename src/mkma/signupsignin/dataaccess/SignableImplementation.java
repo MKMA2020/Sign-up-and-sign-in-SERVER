@@ -47,7 +47,10 @@ public class SignableImplementation implements Signable {
      */
     @Override
     public User signIn(User user) throws DataBaseConnectionException, ServerErrorException, UserNotFoundException, PassNotCorrectException {
-
+        Connection con = null;
+        PreparedStatement stmtUser = null;
+        PreparedStatement stmtPass = null;
+        ResultSet rs = null;
         try {
             // User and password declared and asigned values from recieved user for the select
             String username = user.getLogin();
@@ -57,14 +60,14 @@ public class SignableImplementation implements Signable {
             Timestamp lastAccess = Timestamp.from(Instant.now());
 
             // Initialize objects and variables
-            ResultSet rs = null;
+            rs = null;
 
             // Start the connection.
-            Connection con = ConnectionPool.getConnection();
+            con = ConnectionPool.getConnection();
 
             // Create Statements
-            PreparedStatement stmtUser = con.prepareStatement(checkUsername);
-            PreparedStatement stmtPass = con.prepareStatement(checkPassword);
+            stmtUser = con.prepareStatement(checkUsername);
+            stmtPass = con.prepareStatement(checkPassword);
 
             // Set the Strings usernames and password to the final queries.
             stmtUser.setString(1, username);
@@ -95,11 +98,17 @@ public class SignableImplementation implements Signable {
                 // Execute the Query              
                 stmtLastAccess.executeUpdate();
             }
-
-            con.close();
-
         } catch (SQLException ex) {
             throw new DataBaseConnectionException();
+        } finally {
+            try {
+                stmtUser.close();
+                stmtPass.close();
+                rs.close();
+                con.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         return user;
@@ -115,7 +124,7 @@ public class SignableImplementation implements Signable {
     @Override
     public User signUp(User user) {
         try {
-            
+
             // User and password declared and asigned values from recieved user for the select
             String login = user.getLogin();
             String email = user.getEmail();
