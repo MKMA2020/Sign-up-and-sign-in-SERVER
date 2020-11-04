@@ -3,6 +3,7 @@ package mkma.signupsignin.application;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ResourceBundle;
 import mkma.signupsignin.thread.Worker;
 
 /**
@@ -23,9 +24,12 @@ public class Application {
      */
     public static void main(String[] args) throws IOException {
         //Variable declaration
+        ResourceBundle configFile;
+        configFile = ResourceBundle.getBundle("mkma.signupsignin.dataaccess.config");
+        
         boolean loop = true;
         ServerSocket server;
-        server = new ServerSocket(6302);
+        server = new ServerSocket(Integer.parseInt(configFile.getString("PORT")));
         Socket service = null;
         while (loop) {
             //Opening of the server socket

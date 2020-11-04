@@ -17,8 +17,6 @@ import org.apache.commons.dbcp2.BasicDataSource;
 public class ConnectionPool {
 
     static ResourceBundle configFile;
-    String viewOption;
-    String modelOption;
 
     private static BasicDataSource ds = new BasicDataSource();
 
