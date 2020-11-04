@@ -112,7 +112,7 @@ public class Worker extends Thread {
         }
     }
 
-    public void returnMessage(Message message, Socket socket) {
+    public synchronized void returnMessage(Message message, Socket socket) {
         OutputStream outputStream = null;
         ObjectOutputStream objectOutputStream = null;
 

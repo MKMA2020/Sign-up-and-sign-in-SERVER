@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package mkma.signupsignin.dataaccess;
 
 import exceptions.DataBaseConnectionException;
 import exceptions.PassNotCorrectException;
 import exceptions.ServerErrorException;
+import exceptions.UserExistsException;
 import exceptions.UserNotFoundException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,8 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import signable.Signable;
 import user_message.User;
 
@@ -30,20 +24,21 @@ import user_message.User;
 public class SignableImplementation implements Signable {
 
     private final String checkUsername = "SELECT login from user where login = ?;";
-    private final String checkPassword = "SELECT password from user where login = ? and password = ?;";
+    private final String checkPasswordAndReturnUser = "SELECT * from user where login = ? and password = ?;";
     private final String updateLastAccess = "UPDATE user set lastAcces=? where login = ?";
     private final String insertUser = "INSERT into user values (?,?,?,?,?,?,?,?,?)";
     private final String lastId = "SELECT count(id) from user;";
 
     /**
-     * signIn Method mostly done. Exceptions yet to handle. Method will check if
-     * a user and password combination exists in the database.
+     * Method will check if the user and password exist in the database.
      *
-     * @param user an User will be recieved.
-     * @exception UserNotFoundException when the specified user doesn't exist in
-     * the database.
-     * @exception PassNotCorrectException when the specified password doesn't
-     * match the user and the user exists.
+     * @param user The user that will be received.
+     * @return The user that will be returned.
+     * @throws DataBaseConnectionException When there is a problem in the
+     * database connection.
+     * @throws ServerErrorException When there is a server error.
+     * @throws UserNotFoundException When the user doesn't exist.
+     * @throws PassNotCorrectException When the password is incorrect.
      */
     @Override
     public User signIn(User user) throws DataBaseConnectionException, ServerErrorException, UserNotFoundException, PassNotCorrectException {
@@ -59,15 +54,12 @@ public class SignableImplementation implements Signable {
             // Last Access of the User will be updated.
             Timestamp lastAccess = Timestamp.from(Instant.now());
 
-            // Initialize objects and variables
-            rs = null;
-
             // Start the connection.
             con = ConnectionPool.getConnection();
 
             // Create Statements
             stmtUser = con.prepareStatement(checkUsername);
-            stmtPass = con.prepareStatement(checkPassword);
+            stmtPass = con.prepareStatement(checkPasswordAndReturnUser);
 
             // Set the Strings usernames and password to the final queries.
             stmtUser.setString(1, username);
@@ -86,6 +78,11 @@ public class SignableImplementation implements Signable {
             rs = stmtPass.executeQuery();
             if (!rs.next()) {
                 throw new PassNotCorrectException();
+            } else {
+                user.setId(rs.getLong(1));
+                user.setLogin(rs.getString(2));
+                user.setEmail(rs.getString(3));
+                user.setFullName(rs.getString(4));
             }
 
             // Update Last Access Query Code
@@ -98,16 +95,17 @@ public class SignableImplementation implements Signable {
                 // Execute the Query              
                 stmtLastAccess.executeUpdate();
             }
+
         } catch (SQLException ex) {
             throw new DataBaseConnectionException();
         } finally {
             try {
+                rs.close();
                 stmtUser.close();
                 stmtPass.close();
-                rs.close();
                 con.close();
             } catch (SQLException ex) {
-                Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+                throw new DataBaseConnectionException();
             }
         }
 
@@ -115,14 +113,21 @@ public class SignableImplementation implements Signable {
     }
 
     /**
-     * signUp Method mostly done. Exceptions yet to handle. Method will check if
-     * the passed Username (Login) exists and will afterwards insert all its
-     * data if it doesn't.
+     * Method will check if the passed Username (Login) exists and will
+     * afterwards insert all its data if it doesn't.
      *
-     * @param user an User will be recieved.
+     * @param user The user that will be received.
+     * @return The user that will be returned.
+     * @throws UserExistsException When the user exists in the database.
+     * @throws DataBaseConnectionException When there is a problem in the
+     * database connection.
+     * @throws ServerErrorException When there is a server error.
      */
     @Override
-    public User signUp(User user) {
+    public User signUp(User user) throws UserExistsException, DataBaseConnectionException, ServerErrorException {
+        // Initialize objects and variables
+        Connection con = null;
+        PreparedStatement stmt = null;
         try {
 
             // User and password declared and asigned values from recieved user for the select
@@ -135,13 +140,10 @@ public class SignableImplementation implements Signable {
             Timestamp lastAccess = Timestamp.from(Instant.now());
             Timestamp lastPasswordChange = Timestamp.from(Instant.now());
 
-            // Initialize objects and variables
-            ResultSet rs = null;
-            PreparedStatement stmt = null;
             long nId = findLastId();
 
             // Start the connection.
-            Connection con = ConnectionPool.getConnection();
+            con = ConnectionPool.getConnection();
 
             // Set the Strings username and password to the final query.
             stmt = con.prepareStatement(insertUser);
@@ -155,19 +157,22 @@ public class SignableImplementation implements Signable {
             stmt.setTimestamp(8, lastAccess);
             stmt.setTimestamp(9, lastPasswordChange);
 
+            // Execute the query and insert the user.
             try {
-                // Execute the query and insert the user.
                 stmt.executeUpdate();
-
             } catch (SQLException ex) {
-                Logger.getLogger(SignableImplementation.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                //Unable to add the new user.
+                throw new UserExistsException();
             }
-            con.close();
 
         } catch (SQLException ex) {
-            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            throw new DataBaseConnectionException();
+        } finally {
+            try {
+                stmt.close();
+                con.close();
+            } catch (SQLException ex) {
+                throw new DataBaseConnectionException();
+            }
         }
         return user;
     }
@@ -177,27 +182,43 @@ public class SignableImplementation implements Signable {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    private long findLastId() {
+    /**
+     * This method will return the last id of the user table.
+     *
+     * @return id as a long.
+     * @throws SQLException When there is a problem related to SQL.
+     * @throws ServerErrorException When there is a problem
+     */
+    private long findLastId() throws SQLException, ServerErrorException {
+        // Initialize objects and variables
         int id = 0;
+        Connection con = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
         try {
-            // Initialize objects and variables
-            DaoConnection dao = new DaoConnection();
-            ResultSet rs = null;
-            //starts the connection and gets de id.
-            dao.conectar();
-            PreparedStatement stmt = dao.con.prepareStatement(lastId);
+
+            //starts the connection and gets the id.
+            con = ConnectionPool.getConnection();
+            stmt = con.prepareStatement(lastId);
 
             rs = stmt.executeQuery();
             if (rs.next()) {
                 id = rs.getInt(1) + 1;
             }
             //Ends the connection
-            dao.desconectar();
 
         } catch (SQLException ex) {
-            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            throw new ServerErrorException();
         } catch (Exception ex) {
-            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
+            throw new DataBaseConnectionException();
+        } finally {
+            try {
+                rs.close();
+                stmt.close();
+                con.close();
+            } catch (SQLException ex) {
+                throw new DataBaseConnectionException();
+            }
         }
         return id;
     }
