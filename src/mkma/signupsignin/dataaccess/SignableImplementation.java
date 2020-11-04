@@ -9,6 +9,7 @@ import exceptions.DataBaseConnectionException;
 import exceptions.PassNotCorrectException;
 import exceptions.ServerErrorException;
 import exceptions.UserNotFoundException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,7 +47,10 @@ public class SignableImplementation implements Signable {
      */
     @Override
     public User signIn(User user) throws DataBaseConnectionException, ServerErrorException, UserNotFoundException, PassNotCorrectException {
-
+        Connection con = null;
+        PreparedStatement stmtUser = null;
+        PreparedStatement stmtPass = null;
+        ResultSet rs = null;
         try {
             // User and password declared and asigned values from recieved user for the select
             String username = user.getLogin();
@@ -56,19 +60,14 @@ public class SignableImplementation implements Signable {
             Timestamp lastAccess = Timestamp.from(Instant.now());
 
             // Initialize objects and variables
-            DaoConnection dao = new DaoConnection();
-            ResultSet rs = null;
+            rs = null;
 
-            try {
-                // Start the connection.
-                dao.conectar();
-            } catch (Exception ex) {
-                Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            // Start the connection.
+            con = ConnectionPool.getConnection();
 
             // Create Statements
-            PreparedStatement stmtUser = dao.con.prepareStatement(checkUsername);
-            PreparedStatement stmtPass = dao.con.prepareStatement(checkPassword);
+            stmtUser = con.prepareStatement(checkUsername);
+            stmtPass = con.prepareStatement(checkPassword);
 
             // Set the Strings usernames and password to the final queries.
             stmtUser.setString(1, username);
@@ -79,7 +78,7 @@ public class SignableImplementation implements Signable {
             // if there is not a Username match
             rs = stmtUser.executeQuery();
             if (!rs.next()) {
-                throw new UserNotFoundException();               
+                throw new UserNotFoundException();
             }
 
             // Execute the Password check query into rs ResultSet and throw PassNotCorrectException
@@ -89,27 +88,29 @@ public class SignableImplementation implements Signable {
                 throw new PassNotCorrectException();
             }
 
-            
             // Update Last Access Query Code
             {
                 // Create Statement
-                PreparedStatement stmtLastAccess = dao.con.prepareStatement(updateLastAccess);
+                PreparedStatement stmtLastAccess = con.prepareStatement(updateLastAccess);
                 // Set the lastAccess Timestamp into the final Query
                 stmtLastAccess.setTimestamp(1, lastAccess);
                 stmtLastAccess.setString(2, username);
                 // Execute the Query              
                 stmtLastAccess.executeUpdate();
             }
+        } catch (SQLException ex) {
+            throw new DataBaseConnectionException();
+        } finally {
             try {
-                dao.desconectar();
-            } catch (Exception ex) {
+                stmtUser.close();
+                stmtPass.close();
+                rs.close();
+                con.close();
+            } catch (SQLException ex) {
                 Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } catch (SQLException ex ) {
-            throw new DataBaseConnectionException();
         }
-       
-        
+
         return user;
     }
 
@@ -122,29 +123,28 @@ public class SignableImplementation implements Signable {
      */
     @Override
     public User signUp(User user) {
-        // User and password declared and asigned values from recieved user for the select
-        
-        String login = user.getLogin();
-        String email = user.getEmail();
-        String fullName = user.getFullName();
-        String password = user.getPassword();
-        Boolean isAdmin = false;
-        Boolean isActive = true;
-        Timestamp lastAccess = Timestamp.from(Instant.now());
-        Timestamp lastPasswordChange = Timestamp.from(Instant.now());
-
-        // Initialize objects and variables
-        DaoConnection dao = new DaoConnection();
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        long nId=findLastId();
-        
         try {
+
+            // User and password declared and asigned values from recieved user for the select
+            String login = user.getLogin();
+            String email = user.getEmail();
+            String fullName = user.getFullName();
+            String password = user.getPassword();
+            Boolean isAdmin = false;
+            Boolean isActive = true;
+            Timestamp lastAccess = Timestamp.from(Instant.now());
+            Timestamp lastPasswordChange = Timestamp.from(Instant.now());
+
+            // Initialize objects and variables
+            ResultSet rs = null;
+            PreparedStatement stmt = null;
+            long nId = findLastId();
+
             // Start the connection.
-            dao.conectar();
+            Connection con = ConnectionPool.getConnection();
 
             // Set the Strings username and password to the final query.
-            stmt = dao.con.prepareStatement(insertUser);
+            stmt = con.prepareStatement(insertUser);
             stmt.setLong(1, nId);
             stmt.setString(2, login);
             stmt.setString(3, email);
@@ -164,12 +164,10 @@ public class SignableImplementation implements Signable {
                         .getName()).log(Level.SEVERE, null, ex);
                 //Unable to add the new user.
             }
-            dao.desconectar();
+            con.close();
 
-        } catch (Exception ex) {
-            Logger.getLogger(SignableImplementation.class
-                    .getName()).log(Level.SEVERE, null, ex);
-            //Connection error
+        } catch (SQLException ex) {
+            Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
         }
         return user;
     }
@@ -180,27 +178,27 @@ public class SignableImplementation implements Signable {
     }
 
     private long findLastId() {
-        int id=0;
-         try {
-         // Initialize objects and variables
-        DaoConnection dao = new DaoConnection();
-        ResultSet rs = null;
-        //starts the connection and gets de id.
-        dao.conectar();
-        PreparedStatement stmt = dao.con.prepareStatement(lastId);
+        int id = 0;
+        try {
+            // Initialize objects and variables
+            DaoConnection dao = new DaoConnection();
+            ResultSet rs = null;
+            //starts the connection and gets de id.
+            dao.conectar();
+            PreparedStatement stmt = dao.con.prepareStatement(lastId);
 
-        rs=stmt.executeQuery();
-        if(rs.next())
-            id=rs.getInt(1)+1;       
-        //Ends the connection
-        dao.desconectar();
-      
-        
-         } catch (SQLException ex) {
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                id = rs.getInt(1) + 1;
+            }
+            //Ends the connection
+            dao.desconectar();
+
+        } catch (SQLException ex) {
             Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
             Logger.getLogger(SignableImplementation.class.getName()).log(Level.SEVERE, null, ex);
         }
-         return id;
+        return id;
     }
 }
