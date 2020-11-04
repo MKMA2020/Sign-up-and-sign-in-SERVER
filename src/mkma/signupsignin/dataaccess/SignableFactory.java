@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package mkma.signupsignin.dataaccess;
 
 import signable.Signable;
@@ -12,7 +7,10 @@ import signable.Signable;
  * @author Martin Gros and Martin Valiente
  */
 public class SignableFactory {
-
+    /**
+     * This method will return a new SignableImplementation Object.
+     * @return Will return SignableImplementation Object.
+     */
     public Signable getSignable() {
         return (new SignableImplementation());
     }
