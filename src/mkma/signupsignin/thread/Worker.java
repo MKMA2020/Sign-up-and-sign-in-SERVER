@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package mkma.signupsignin.thread;
 
 import exceptions.DataBaseConnectionException;
@@ -27,22 +22,26 @@ import user_message.MessageType;
 import user_message.User;
 
 /**
- * This class is the server thread. It gets the message, sends it to the database
- * and then sends it back with the changes needed.
+ * This class is the server thread. It gets the message, sends it to the
+ * database and then sends it back with the changes needed.
+ *
  * @author Kerman Rodríguez
  */
 public class Worker extends Thread {
+
     //Variable declaration
     private Socket service;
     private Message returnMessage;
     private User user;
     private Message received;
     private Boolean availableConnection;
+
     //Thread constructor
     public Worker(Socket service, Boolean availableConnections) {
         this.service = service;
         this.availableConnection = availableConnections;
     }
+
     /**
      * This method starts the thread when the server socket creates a socket,
      * and treats the client's request.
@@ -55,7 +54,7 @@ public class Worker extends Thread {
             Application.getConnection();
             ObjectInputStream entry = null;
             InputStream input = null;
-            
+
             //Opening of the entry stream
             try {
                 input = service.getInputStream();
@@ -98,10 +97,11 @@ public class Worker extends Thread {
                 returnMessage.setMessageType(MessageType.USERNOTFOUND);
             } catch (UserExistsException ex) {
                 returnMessage.setMessageType(MessageType.USEREXISTS);
-            //It sends the message back and then closes the socket
+                //It sends the message back and then closes the socket
             } finally {
-                if (returnMessage.getMessageType() != MessageType.OKAY)
+                if (returnMessage.getMessageType() != MessageType.OKAY) {
                     returnMessage.setUser(null);
+                }
                 returnMessage(returnMessage, service);
                 try {
                     entry.close();
@@ -133,9 +133,11 @@ public class Worker extends Thread {
             }
         }
     }
+
     /**
-     * This method will send the modified message back to the client
-     * to be treated.
+     * This method will send the modified message back to the client to be
+     * treated.
+     *
      * @param message the message to send back to the client
      * @param socket the socket used to receive and send the message back
      */
@@ -145,7 +147,7 @@ public class Worker extends Thread {
         ObjectOutputStream objectOutputStream = null;
 
         //Defines the object and the stream, and sends a message
-        try {          
+        try {
             outputStream = socket.getOutputStream();
             objectOutputStream = new ObjectOutputStream(outputStream);
             objectOutputStream.writeObject(message);
