@@ -11,6 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import signable.Signable;
 import user_message.User;
 
@@ -70,6 +72,8 @@ public class SignableImplementation implements Signable {
             // if there is not a Username match
             rs = stmtUser.executeQuery();
             if (!rs.next()) {
+                final Logger LOG = Logger.getLogger("mkma.signupsignin.dataaccess.SignableImplementation.java");
+                LOG.log(Level.INFO, "Client tried to log in with an unregistered username. Introduced username: " + user.getLogin());
                 throw new UserNotFoundException();
             }
 
@@ -77,6 +81,8 @@ public class SignableImplementation implements Signable {
             // if there is not a match
             rs = stmtPass.executeQuery();
             if (!rs.next()) {
+                final Logger LOG = Logger.getLogger("mkma.signupsignin.dataaccess.SignableImplementation.java");
+                LOG.log(Level.INFO, "User tried to log in with an uncorrect password. Username: " + user.getLogin());
                 throw new PassNotCorrectException();
             } else {
                 user.setId(rs.getLong(1));
@@ -159,6 +165,8 @@ public class SignableImplementation implements Signable {
             try {
                 stmt.executeUpdate();
             } catch (SQLException ex) {
+                final Logger LOG = Logger.getLogger("mkma.signupsignin.dataaccess.SignableImplementation.java");
+                LOG.log(Level.INFO, "User tried to register an already existing username. Introduced username: " + user.getLogin());
                 throw new UserExistsException();
             }
 

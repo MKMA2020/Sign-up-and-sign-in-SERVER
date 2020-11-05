@@ -31,7 +31,7 @@ public class ConnectionPool {
      * Method will return a connection from the pool.
      *
      * @return A connection from the pool.
-     * @throws SQLException Whene a SQL Exception Occurs.
+     * @throws SQLException When a SQL Exception Occurs.
      */
     public static synchronized Connection getConnection() throws SQLException {
         return ds.getConnection();
