@@ -60,14 +60,14 @@ public class Application {
      * This method will remove one from the maximum clients when one
      * tries to use the app.
      */
-    public static void getConnection() {
+    public synchronized static void getConnection() {
        maxClients--;
     }
     /**
      * This method will add one from the maximum clients when 
      * a client has finished.
      */
-    public static void releaseConnection() {
+    public synchronized static void releaseConnection() {
         maxClients++;
     }
 }
