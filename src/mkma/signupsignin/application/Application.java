@@ -3,6 +3,9 @@ package mkma.signupsignin.application;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ResourceBundle;
+
+import mkma.signupsignin.dataaccess.*;
 import mkma.signupsignin.thread.Worker;
 
 /**
@@ -13,6 +16,10 @@ import mkma.signupsignin.thread.Worker;
  * @author Kerman Rodríguez and Martín Gros
  */
 public class Application {
+    public static ResourceBundle configFile;
+    
+        
+     public static Integer maxClients;
 
     /**
      * Main method. It creates the listening server socket which then creates
@@ -23,6 +30,8 @@ public class Application {
      */
     public static void main(String[] args) throws IOException {
         //Variable declaration
+        configFile = ResourceBundle.getBundle("mkma.signupsignin.dataaccess.config");
+        maxClients = (Integer.parseInt(configFile.getString("MaxClients")));
         boolean loop = true;
         ServerSocket server;
         server = new ServerSocket(6302);
@@ -31,12 +40,34 @@ public class Application {
             //Opening of the server socket
             try {
                 service = server.accept();
-                Worker thread = new Worker(service);
-                new Thread(thread).start();
+                if(maxClients>0) {
+                    Worker thread = new Worker(service, Boolean.TRUE);
+                    new Thread(thread).start();
+                } else {
+                     Worker thread = new Worker(service, Boolean.FALSE);
+                    new Thread(thread).start();
+                }
+                    
+                
+                
             } catch (IOException e) {
                 System.out.println(e);
             }
 
         }
+    }
+    /**
+     * This method will remove one from the maximum clients when one
+     * tries to use the app.
+     */
+    public static void getConnection() {
+       maxClients--;
+    }
+    /**
+     * This method will add one from the maximum clients when 
+     * a client has finished.
+     */
+    public static void releaseConnection() {
+        maxClients++;
     }
 }
