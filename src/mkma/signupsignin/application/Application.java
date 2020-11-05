@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ResourceBundle;
-
-import mkma.signupsignin.dataaccess.*;
 import mkma.signupsignin.thread.Worker;
 
 /**
@@ -16,10 +14,9 @@ import mkma.signupsignin.thread.Worker;
  * @author Kerman Rodríguez and Martín Gros
  */
 public class Application {
+
     public static ResourceBundle configFile;
-    
-        
-     public static Integer maxClients;
+    public static Integer maxClients;
 
     /**
      * Main method. It creates the listening server socket which then creates
@@ -40,32 +37,32 @@ public class Application {
             //Opening of the server socket
             try {
                 service = server.accept();
-                if(maxClients>0) {
+                if (maxClients > 0) {
                     Worker thread = new Worker(service, Boolean.TRUE);
                     new Thread(thread).start();
                 } else {
-                     Worker thread = new Worker(service, Boolean.FALSE);
+                    Worker thread = new Worker(service, Boolean.FALSE);
                     new Thread(thread).start();
                 }
-                    
-                
-                
+
             } catch (IOException e) {
                 System.out.println(e);
             }
 
         }
     }
+
     /**
-     * This method will remove one from the maximum clients when one
-     * tries to use the app.
+     * This method will remove one from the maximum clients when one tries to
+     * use the app.
      */
     public synchronized static void getConnection() {
-       maxClients--;
+        maxClients--;
     }
+
     /**
-     * This method will add one from the maximum clients when 
-     * a client has finished.
+     * This method will add one from the maximum clients when a client has
+     * finished.
      */
     public synchronized static void releaseConnection() {
         maxClients++;

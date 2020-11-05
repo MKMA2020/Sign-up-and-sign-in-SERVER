@@ -86,15 +86,13 @@ public class SignableImplementation implements Signable {
             }
 
             // Update Last Access Query Code
-            {
-                // Create Statement
-                PreparedStatement stmtLastAccess = con.prepareStatement(updateLastAccess);
-                // Set the lastAccess Timestamp into the final Query
-                stmtLastAccess.setTimestamp(1, lastAccess);
-                stmtLastAccess.setString(2, username);
-                // Execute the Query              
-                stmtLastAccess.executeUpdate();
-            }
+            // Create Statement
+            PreparedStatement stmtLastAccess = con.prepareStatement(updateLastAccess);
+            // Set the lastAccess Timestamp into the final Query
+            stmtLastAccess.setTimestamp(1, lastAccess);
+            stmtLastAccess.setString(2, username);
+            // Execute the Query              
+            stmtLastAccess.executeUpdate();
 
         } catch (SQLException ex) {
             throw new DataBaseConnectionException();
